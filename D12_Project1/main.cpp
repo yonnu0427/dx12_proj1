@@ -16,6 +16,8 @@
 #include<iostream>
 #endif
 
+#include "Window.h"
+
 #pragma comment(lib,"DirectXTex.lib")
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -49,18 +51,6 @@ void DebugOutputFormatString(const char* format, ...) {
 	va_end(valist);
 #endif
 }
-
-//面倒だけど書かなあかんやつ
-LRESULT WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-	if (msg == WM_DESTROY) {//ウィンドウが破棄されたら呼ばれます
-		PostQuitMessage(0);//OSに対して「もうこのアプリは終わるんや」と伝える
-		return 0;
-	}
-	return DefWindowProc(hwnd, msg, wparam, lparam);//規定の処理を行う
-}
-
-const unsigned int window_width = 1280;
-const unsigned int window_height = 720;
 
 IDXGIFactory4* _dxgiFactory = nullptr;
 ID3D12Device* _dev = nullptr;
@@ -378,30 +368,6 @@ HRESULT CreateSwapChain(const HWND& hwnd, IDXGIFactory4*& dxgiFactory) {
 
 }
 
-void CreateGameWindow(HWND& hwnd, WNDCLASSEX& windowClass) {
-	HINSTANCE hInst = GetModuleHandle(nullptr);
-	//ウィンドウクラス生成＆登録
-	windowClass.cbSize = sizeof(WNDCLASSEX);
-	windowClass.lpfnWndProc = (WNDPROC)WindowProcedure;//コールバック関数の指定
-	windowClass.lpszClassName = _T("DirectXTest");//アプリケーションクラス名(適当でいいです)
-	windowClass.hInstance = GetModuleHandle(0);//ハンドルの取得
-	RegisterClassEx(&windowClass);//アプリケーションクラス(こういうの作るからよろしくってOSに予告する)
-
-	RECT wrc = { 0,0, window_width, window_height };//ウィンドウサイズを決める
-	AdjustWindowRect(&wrc, WS_OVERLAPPEDWINDOW, false);//ウィンドウのサイズはちょっと面倒なので関数を使って補正する
-	//ウィンドウオブジェクトの生成
-	hwnd = CreateWindow(windowClass.lpszClassName,//クラス名指定
-		_T("DX12 マテリアル反映"),//タイトルバーの文字
-		WS_OVERLAPPEDWINDOW,//タイトルバーと境界線があるウィンドウです
-		CW_USEDEFAULT,//表示X座標はOSにお任せします
-		CW_USEDEFAULT,//表示Y座標はOSにお任せします
-		wrc.right - wrc.left,//ウィンドウ幅
-		wrc.bottom - wrc.top,//ウィンドウ高
-		nullptr,//親ウィンドウハンドル
-		nullptr,//メニューハンドル
-		windowClass.hInstance,//呼び出しアプリケーションハンドル
-		nullptr);//追加パラメータ
-}
 
 HRESULT InitializeDXGIDevice() {
 	UINT flagsDXGI = 0;
