@@ -51,5 +51,8 @@
     <ClInclude Include="Texture.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="PMD.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

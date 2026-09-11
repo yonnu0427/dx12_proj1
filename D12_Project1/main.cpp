@@ -19,6 +19,7 @@
 #include "Window.h"
 #include "D3D12Context.h"
 #include "Texture.h"
+#include "PMD.h"
 
 #pragma comment(lib,"DirectXTex.lib")
 #pragma comment(lib,"d3d12.lib")
@@ -27,19 +28,6 @@
 
 using namespace DirectX;
 using namespace std;
-
-#pragma pack(push, 1)
-struct PMD_VERTEX
-{
-	XMFLOAT3 pos;
-	XMFLOAT3 normal;
-	XMFLOAT2 uv;
-	uint16_t bone_no[2];
-	uint8_t  weight;
-	uint8_t  EdgeFlag;
-	uint16_t dummy;
-};
-#pragma pack(pop)
 
 ///@brief コンソール画面にフォーマット付き文字列を表示
 ///@param format フォーマット(%dとか%fとかの)
@@ -158,12 +146,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	auto blackTex = CreateBlackTexture();
 	auto gradTex = CreateGrayGradationTexture();
 
-	//PMDヘッダ構造体
-	struct PMDHeader {
-		float version; //例：00 00 80 3F == 1.00
-		char model_name[20];//モデル名
-		char comment[256];//モデルコメント
-	};
 	char signature[3];
 	PMDHeader pmdheader = {};
 	//string strModelPath = "Model/hibiki/hibiki.pmd";
@@ -179,43 +161,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	unsigned int vertNum;//頂点数
 	fread(&vertNum, sizeof(vertNum), 1, fp);
 
-
-#pragma pack(1)//ここから1バイトパッキング…アライメントは発生しない
-	//PMDマテリアル構造体
-	struct PMDMaterial {
-		XMFLOAT3 diffuse; //ディフューズ色
-		float alpha; // ディフューズα
-		float specularity;//スペキュラの強さ(乗算値)
-		XMFLOAT3 specular; //スペキュラ色
-		XMFLOAT3 ambient; //アンビエント色
-		unsigned char toonIdx; //トゥーン番号(後述)
-		unsigned char edgeFlg;//マテリアル毎の輪郭線フラグ
-		//2バイトのパディングが発生！！
-		unsigned int indicesNum; //このマテリアルが割り当たるインデックス数
-		char texFilePath[20]; //テクスチャファイル名(プラスアルファ…後述)
-	};//70バイトのはず…でもパディングが発生するため72バイト
-#pragma pack()//1バイトパッキング解除
-
-	//シェーダ側に投げられるマテリアルデータ
-	struct MaterialForHlsl {
-		XMFLOAT3 diffuse; //ディフューズ色
-		float alpha; // ディフューズα
-		XMFLOAT3 specular; //スペキュラ色
-		float specularity;//スペキュラの強さ(乗算値)
-		XMFLOAT3 ambient; //アンビエント色
-	};
-	//それ以外のマテリアルデータ
-	struct AdditionalMaterial {
-		std::string texPath;//テクスチャファイルパス
-		int toonIdx; //トゥーン番号
-		bool edgeFlg;//マテリアル毎の輪郭線フラグ
-	};
-	//まとめたもの
-	struct Material {
-		unsigned int indicesNum;//インデックス数
-		MaterialForHlsl material;
-		AdditionalMaterial additional;
-	};
 
 	constexpr unsigned int pmdvertex_size = 38;//頂点1つあたりのサイズ
 	std::vector<PMD_VERTEX> vertices(vertNum);//バッファ確保
