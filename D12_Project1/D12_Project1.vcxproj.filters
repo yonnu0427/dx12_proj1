@@ -24,6 +24,9 @@
     <ClCompile Include="D3D12Context.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="BasicType.hlsli">
@@ -43,6 +46,9 @@
       <Filter>ソース ファイル</Filter>
     </ClInclude>
     <ClInclude Include="D3D12Context.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
   </ItemGroup>
