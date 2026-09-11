@@ -5,58 +5,25 @@
 #include <dxgi1_6.h>
 #include <vector>
 
-class D3D12Context
-{
-public:
-    bool Initialize(
-        HWND hwnd,
-        unsigned int width,
-        unsigned int height
-    );
+extern IDXGIFactory4* _dxgiFactory;
+extern ID3D12Device* _dev;
+extern ID3D12CommandAllocator* _cmdAllocator;
+extern ID3D12GraphicsCommandList* _cmdList;
+extern ID3D12CommandQueue* _cmdQueue;
+extern IDXGISwapChain4* _swapchain;
 
-    ID3D12Device* GetDevice() const
-    {
-        return device_;
-    }
+void EnableDebugLayer();
 
-    ID3D12GraphicsCommandList* GetCommandList() const
-    {
-        return commandList_;
-    }
+HRESULT CreateSwapChain(
+    const HWND& hwnd,
+    IDXGIFactory4*& dxgiFactory
+);
 
-    ID3D12CommandQueue* GetCommandQueue() const
-    {
-        return commandQueue_;
-    }
+HRESULT InitializeDXGIDevice();
 
-    IDXGISwapChain4* GetSwapChain() const
-    {
-        return swapChain_;
-    }
+HRESULT InitializeCommand();
 
-private:
-    bool InitializeDevice();
-    bool InitializeCommand();
-    bool CreateSwapChain(HWND hwnd);
-    bool CreateRenderTargets();
-
-#ifdef _DEBUG
-    void EnableDebugLayer();
-#endif
-
-private:
-    unsigned int width_ = 0;
-    unsigned int height_ = 0;
-
-    IDXGIFactory4* dxgiFactory_ = nullptr;
-    ID3D12Device* device_ = nullptr;
-
-    ID3D12CommandAllocator* commandAllocator_ = nullptr;
-    ID3D12GraphicsCommandList* commandList_ = nullptr;
-    ID3D12CommandQueue* commandQueue_ = nullptr;
-
-    IDXGISwapChain4* swapChain_ = nullptr;
-
-    ID3D12DescriptorHeap* rtvHeap_ = nullptr;
-    std::vector<ID3D12Resource*> backBuffers_;
-};
+HRESULT CreateFinalRenderTarget(
+    ID3D12DescriptorHeap*& rtvHeaps,
+    std::vector<ID3D12Resource*>& backBuffers
+);
