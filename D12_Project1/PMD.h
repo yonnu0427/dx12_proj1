@@ -2,6 +2,7 @@
 
 #include <DirectXMath.h>
 #include <string>
+#include <vector>
 
 using namespace DirectX;
 
@@ -61,4 +62,13 @@ struct Material {
     unsigned int indicesNum;//インデックス数
     MaterialForHlsl material;
     AdditionalMaterial additional;
+};
+
+//PMDのデータをまとめたもの
+struct PMDData
+{
+    PMDHeader header;
+    std::vector<PMD_VERTEX> vertices;
+    std::vector<unsigned short> indices;
+    std::vector<Material> materials;
 };

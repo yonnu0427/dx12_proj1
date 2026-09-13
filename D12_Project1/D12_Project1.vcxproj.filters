@@ -27,6 +27,12 @@
     <ClCompile Include="Texture.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="PMDLoader.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelLoader.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="BasicType.hlsli">
@@ -52,6 +58,15 @@
       <Filter>ソース ファイル</Filter>
     </ClInclude>
     <ClInclude Include="PMD.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="PMDLoader.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>ソース ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelLoader.h">
       <Filter>ソース ファイル</Filter>
     </ClInclude>
   </ItemGroup>

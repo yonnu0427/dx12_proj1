@@ -21,6 +21,8 @@
   <ItemGroup>
     <ClCompile Include="D3D12Context.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ModelLoader.cpp" />
+    <ClCompile Include="PMDLoader.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="window.cpp" />
   </ItemGroup>
@@ -47,7 +49,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D12Context.h" />
+    <ClInclude Include="Model.h" />
+    <ClInclude Include="ModelLoader.h" />
     <ClInclude Include="PMD.h" />
+    <ClInclude Include="PMDLoader.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="window.h" />
   </ItemGroup>
