@@ -7,12 +7,9 @@
 #include <DirectXMath.h>
 #include <string>
 
-struct SceneData
+struct ObjectData
 {
     DirectX::XMMATRIX world;
-    DirectX::XMMATRIX view;
-    DirectX::XMMATRIX proj;
-    DirectX::XMFLOAT3 eye;
 };
 
 struct RenderObject
@@ -20,8 +17,8 @@ struct RenderObject
     Model model;
     Transform transform;
 
-    ID3D12Resource* sceneConstBuff = nullptr;
-    SceneData* mapScene = nullptr;
+    ID3D12Resource* objectConstBuff = nullptr;
+    ObjectData* mapScene = nullptr;
 };
 
 bool InitializeRenderObject(

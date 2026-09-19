@@ -1,9 +1,13 @@
 #include"BasicType.hlsli"
 
 //定数バッファ0
-cbuffer SceneData : register(b0)
+cbuffer ObjectData : register(b0)
 {
     matrix world; //ワールド変換行列
+};
+
+cbuffer CameraData : register(b1)
+{
     matrix view;
     matrix proj; //ビュープロジェクション行列
     float3 eye;

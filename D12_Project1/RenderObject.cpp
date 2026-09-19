@@ -13,7 +13,7 @@ bool InitializeRenderObject(RenderObject& object, const std::string& modelPath) 
 
 	auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 
-	auto resDesc = CD3DX12_RESOURCE_DESC::Buffer((sizeof(SceneData) + 0xff) & ~0xff);
+	auto resDesc = CD3DX12_RESOURCE_DESC::Buffer((sizeof(ObjectData) + 0xff) & ~0xff);
 
 	auto result = _dev->CreateCommittedResource(
 		&heapProp,
@@ -21,7 +21,7 @@ bool InitializeRenderObject(RenderObject& object, const std::string& modelPath) 
 		&resDesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		IID_PPV_ARGS(&object.sceneConstBuff)
+		IID_PPV_ARGS(&object.objectConstBuff)
 	);
 
 	if (FAILED(result))
@@ -29,7 +29,7 @@ bool InitializeRenderObject(RenderObject& object, const std::string& modelPath) 
 		return false;
 	}
 
-	result = object.sceneConstBuff->Map(
+	result = object.objectConstBuff->Map(
 		0,
 		nullptr,
 		reinterpret_cast<void**>(

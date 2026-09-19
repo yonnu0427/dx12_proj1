@@ -6,6 +6,7 @@
 
 void DrawModel(
     Model& model,
-    ID3D12Resource* sceneConstBuff,
+    ID3D12Resource* objectConstBuff,
+    ID3D12Resource* cameraConstBuff,
     ID3D12RootSignature* rootSignature
 );

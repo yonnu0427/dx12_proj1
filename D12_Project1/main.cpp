@@ -33,6 +33,7 @@
 #pragma comment(lib,"dxgi.lib")
 #pragma comment(lib,"d3dcompiler.lib")
 
+
 using namespace DirectX;
 using namespace std;
 
@@ -167,6 +168,47 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		strModelPath2
 	);
 
+
+	struct CameraData
+	{
+		XMMATRIX view;
+		XMMATRIX proj;
+		XMFLOAT3 eye;
+	};
+
+	ID3D12Resource* cameraConstBuff = nullptr;
+
+	auto cameraHeapProp =
+		CD3DX12_HEAP_PROPERTIES(
+			D3D12_HEAP_TYPE_UPLOAD
+		);
+
+	auto cameraResDesc =
+		CD3DX12_RESOURCE_DESC::Buffer(
+			(sizeof(CameraData) + 0xff) & ~0xff
+		);
+
+	result = _dev->CreateCommittedResource(
+		&cameraHeapProp,
+		D3D12_HEAP_FLAG_NONE,
+		&cameraResDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&cameraConstBuff)
+	);
+
+	CameraData* mapCamera = nullptr;
+
+	result = cameraConstBuff->Map(
+		0,
+		nullptr,
+		reinterpret_cast<void**>(&mapCamera)
+	);
+
+	float aspectRatio =
+    static_cast<float>(window_width) /
+    static_cast<float>(window_height);
+
 	
 	ID3DBlob* _vsBlob = nullptr;
 	ID3DBlob* _psBlob = nullptr;
@@ -290,28 +332,33 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//定数ふたつめ(マテリアル用)
 	descTblRange[1].NumDescriptors = 1;//デスクリプタヒープはたくさんあるが一度に使うのは１つ
 	descTblRange[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;//種別は定数
-	descTblRange[1].BaseShaderRegister = 1;//1番スロットから
+	descTblRange[1].BaseShaderRegister = 2;//1番スロットから
 	descTblRange[1].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	//テクスチャ1つ目(↑のマテリアルとペア)
 	descTblRange[2].NumDescriptors = 4;//テクスチャ４つ(基本とsphとspaとトゥーン)
 	descTblRange[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;//種別はテクスチャ
-	descTblRange[2].BaseShaderRegister = 0;//0番スロットから
+	descTblRange[2].BaseShaderRegister = 0;//2番スロットから
 	descTblRange[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER rootparam[2] = {};
+	D3D12_ROOT_PARAMETER rootparam[3] = {};
 	rootparam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootparam[0].Descriptor.ShaderRegister = 0;
 	rootparam[0].Descriptor.RegisterSpace = 0;
 	rootparam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;//全てのシェーダから見える
 
-	rootparam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootparam[1].DescriptorTable.pDescriptorRanges = &descTblRange[1];//デスクリプタレンジのアドレス
-	rootparam[1].DescriptorTable.NumDescriptorRanges = 2;//デスクリプタレンジ数←ここ
-	rootparam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//ピクセルシェーダから見える
+	rootparam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootparam[1].Descriptor.ShaderRegister = 1;
+	rootparam[1].Descriptor.RegisterSpace = 0;
+	rootparam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;;
+
+	rootparam[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	rootparam[2].DescriptorTable.pDescriptorRanges = &descTblRange[1];//デスクリプタレンジのアドレス
+	rootparam[2].DescriptorTable.NumDescriptorRanges = 2;//デスクリプタレンジ数←ここ
+	rootparam[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//ピクセルシェーダから見える
 
 	rootSignatureDesc.pParameters = rootparam;//ルートパラメータの先頭アドレス
-	rootSignatureDesc.NumParameters = 2;//ルートパラメータ数
+	rootSignatureDesc.NumParameters = 3;//ルートパラメータ数
 
 	D3D12_STATIC_SAMPLER_DESC samplerDesc[2] = {};
 	samplerDesc[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//横繰り返し
@@ -360,7 +407,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	XMMATRIX worldMat = XMMatrixIdentity();
 	
 	Camera camera;
-	float aspectRatio = static_cast<float>(window_width) / static_cast<float>(window_height);
+	aspectRatio = static_cast<float>(window_width) / static_cast<float>(window_height);
 
 	auto viewMat = camera.GetViewMatrix();
 	auto projMat = camera.GetProjectionMatrix(aspectRatio);
@@ -379,16 +426,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		worldMat = miku.transform.GetWorldMatrix();
 
 		miku.mapScene->world = worldMat;
-		miku.mapScene->view = viewMat;
-		miku.mapScene->proj = projMat;
-		miku.mapScene->eye = camera.position;
 
 		worldMat = ruka.transform.GetWorldMatrix();
 
 		ruka.mapScene->world = worldMat;
-		ruka.mapScene->view = viewMat;
-		ruka.mapScene->proj = projMat;
-		ruka.mapScene->eye = camera.position;
+
+		mapCamera->view = camera.GetViewMatrix();
+		mapCamera->proj = camera.GetProjectionMatrix(aspectRatio);
+		mapCamera->eye = camera.position;
 
 		angle += 0.01;
 
@@ -427,8 +472,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		_cmdList->RSSetScissorRects(1, &scissorrect);
 		
 
-		DrawModel(miku.model, miku.sceneConstBuff, rootsignature);
-		DrawModel(ruka.model, ruka.sceneConstBuff, rootsignature);
+		DrawModel(miku.model, miku.objectConstBuff, cameraConstBuff, rootsignature);
+		DrawModel(ruka.model, ruka.objectConstBuff, cameraConstBuff, rootsignature);
 
 		barrier = CD3DX12_RESOURCE_BARRIER::Transition(_backBuffers[bbIdx],
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
