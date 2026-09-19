@@ -1,0 +1,44 @@
+#include "RenderObject.h"
+
+#include "ModelLoader.h"
+#include "D3D12Context.h"
+
+#include <d3dx12.h>
+
+bool InitializeRenderObject(RenderObject& object, const std::string& modelPath) {
+	if (!LoadModel(object.model, modelPath))
+	{
+		return false;
+	}
+
+	auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+
+	auto resDesc = CD3DX12_RESOURCE_DESC::Buffer((sizeof(SceneData) + 0xff) & ~0xff);
+
+	auto result = _dev->CreateCommittedResource(
+		&heapProp,
+		D3D12_HEAP_FLAG_NONE,
+		&resDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&object.sceneConstBuff)
+	);
+
+	if (FAILED(result))
+	{
+		return false;
+	}
+
+	result = object.sceneConstBuff->Map(
+		0,
+		nullptr,
+		reinterpret_cast<void**>(
+			&object.mapScene
+			)
+	);
+
+	if (FAILED(result))
+	{
+		return false;
+	}
+}

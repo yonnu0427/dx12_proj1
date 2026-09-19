@@ -23,6 +23,10 @@
 #include "PMDLoader.h"
 #include "Model.h"
 #include "ModelLoader.h"
+#include "Transform.h"
+#include "Renderer.h"
+#include "RenderObject.h"
+#include "Camera.h"
 
 #pragma comment(lib,"DirectXTex.lib")
 #pragma comment(lib,"d3d12.lib")
@@ -149,9 +153,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//string strModelPath = "Model/reimu/reimu.pmd";
 	//string strModelPath = "Model/巡音ルカ.pmd";
 	string strModelPath = "Model/初音ミク.pmd";
+	string strModelPath2 = "Model/巡音ルカ.pmd";
 
-	Model miku;
-	LoadModel(miku, strModelPath);
+	RenderObject miku;
+	InitializeRenderObject(
+		miku,
+		strModelPath
+	);
+
+	RenderObject ruka;
+	InitializeRenderObject(
+		ruka,
+		strModelPath2
+	);
 
 	
 	ID3DBlob* _vsBlob = nullptr;
@@ -286,9 +300,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	descTblRange[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
 	D3D12_ROOT_PARAMETER rootparam[2] = {};
-	rootparam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
-	rootparam[0].DescriptorTable.pDescriptorRanges = &descTblRange[0];//デスクリプタレンジのアドレス
-	rootparam[0].DescriptorTable.NumDescriptorRanges = 1;//デスクリプタレンジ数
+	rootparam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+	rootparam[0].Descriptor.ShaderRegister = 0;
+	rootparam[0].Descriptor.RegisterSpace = 0;
 	rootparam[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;//全てのシェーダから見える
 
 	rootparam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
@@ -342,71 +356,41 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	scissorrect.right = scissorrect.left + window_width;//切り抜き右座標
 	scissorrect.bottom = scissorrect.top + window_height;//切り抜き下座標
 
-	//シェーダ側に渡すための基本的な環境データ
-	struct SceneData {
-		XMMATRIX world;//ワールド行列
-		XMMATRIX view;//ビュープロジェクション行列
-		XMMATRIX proj;//
-		XMFLOAT3 eye;//視点座標
-	};
-
 	//定数バッファ作成
 	XMMATRIX worldMat = XMMatrixIdentity();
-	XMFLOAT3 eye(0, 15, -15);
-	XMFLOAT3 target(0, 15, 0);
-	XMFLOAT3 up(0, 1, 0);
-	auto viewMat = XMMatrixLookAtLH(XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
-	auto projMat = XMMatrixPerspectiveFovLH(XM_PIDIV4,//画角は45°
-		static_cast<float>(window_width) / static_cast<float>(window_height),//アス比
-		1.0f,//近い方
-		100.0f//遠い方
-	);
-	ID3D12Resource* constBuff = nullptr;
-	auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	auto resDesc = CD3DX12_RESOURCE_DESC::Buffer((sizeof(SceneData) + 0xff) & ~0xff);
-	result = _dev->CreateCommittedResource(
-		&heapProp,
-		D3D12_HEAP_FLAG_NONE,
-		&resDesc,
-		D3D12_RESOURCE_STATE_GENERIC_READ,
-		nullptr,
-		IID_PPV_ARGS(&constBuff)
-	);
+	
+	Camera camera;
+	float aspectRatio = static_cast<float>(window_width) / static_cast<float>(window_height);
 
-	SceneData* mapScene = nullptr;//マップ先を示すポインタ
-	result = constBuff->Map(0, nullptr, (void**)&mapScene);//マップ
-	//行列の内容をコピー
-	mapScene->world = worldMat;
-	mapScene->view = viewMat;
-	mapScene->proj = projMat;
-	mapScene->eye = eye;
-	ID3D12DescriptorHeap* basicDescHeap = nullptr;
-	D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
-	descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;//シェーダから見えるように
-	descHeapDesc.NodeMask = 0;//マスクは0
-	descHeapDesc.NumDescriptors = 1;//
-	descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;//デスクリプタヒープ種別
-	result = _dev->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&basicDescHeap));//生成
-
-	////デスクリプタの先頭ハンドルを取得しておく
-	auto basicHeapHandle = basicDescHeap->GetCPUDescriptorHandleForHeapStart();
-
-	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
-	cbvDesc.BufferLocation = constBuff->GetGPUVirtualAddress();
-	cbvDesc.SizeInBytes = static_cast<UINT>(constBuff->GetDesc().Width);
-	//定数バッファビューの作成
-	_dev->CreateConstantBufferView(&cbvDesc, basicHeapHandle);
+	auto viewMat = camera.GetViewMatrix();
+	auto projMat = camera.GetProjectionMatrix(aspectRatio);
 
 	MSG msg = {};
 	unsigned int frame = 0;
 	float angle = 0.0f;
 	auto dsvH = dsvHeap->GetCPUDescriptorHandleForHeapStart();
 	while (true) {
-		worldMat = XMMatrixRotationY(angle);
-		mapScene->world = worldMat;
-		mapScene->view = viewMat;
-		mapScene->proj = projMat;
-		angle += 0.01f;
+		miku.transform.rotation.y = angle;
+		miku.transform.position.x = 3.0f;
+
+		ruka.transform.rotation.y = angle;
+		ruka.transform.position.x = -3.0f;
+
+		worldMat = miku.transform.GetWorldMatrix();
+
+		miku.mapScene->world = worldMat;
+		miku.mapScene->view = viewMat;
+		miku.mapScene->proj = projMat;
+		miku.mapScene->eye = camera.position;
+
+		worldMat = ruka.transform.GetWorldMatrix();
+
+		ruka.mapScene->world = worldMat;
+		ruka.mapScene->view = viewMat;
+		ruka.mapScene->proj = projMat;
+		ruka.mapScene->eye = camera.position;
+
+		angle += 0.01;
 
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
@@ -441,30 +425,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		_cmdList->RSSetViewports(1, &viewport);
 		_cmdList->RSSetScissorRects(1, &scissorrect);
+		
 
-		_cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		_cmdList->IASetVertexBuffers(0, 1, &miku.vbView);
-		_cmdList->IASetIndexBuffer(&miku.ibView);
-
-		_cmdList->SetGraphicsRootSignature(rootsignature);
-
-		//WVP変換行列
-		_cmdList->SetDescriptorHeaps(1, &basicDescHeap);
-		_cmdList->SetGraphicsRootDescriptorTable(0, basicDescHeap->GetGPUDescriptorHandleForHeapStart());
-
-		//マテリアル
-		_cmdList->SetDescriptorHeaps(1, &miku.materialDescHeap);
-
-		auto materialH = miku.materialDescHeap->GetGPUDescriptorHandleForHeapStart();
-		unsigned int idxOffset = 0;
-
-		auto cbvsrvIncSize = _dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * 5;
-		for (auto& m : miku.data.materials) {
-			_cmdList->SetGraphicsRootDescriptorTable(1, materialH);
-			_cmdList->DrawIndexedInstanced(m.indicesNum, 1, idxOffset, 0, 0);
-			materialH.ptr += cbvsrvIncSize;
-			idxOffset += m.indicesNum;
-		}
+		DrawModel(miku.model, miku.sceneConstBuff, rootsignature);
+		DrawModel(ruka.model, ruka.sceneConstBuff, rootsignature);
 
 		barrier = CD3DX12_RESOURCE_BARRIER::Transition(_backBuffers[bbIdx],
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
