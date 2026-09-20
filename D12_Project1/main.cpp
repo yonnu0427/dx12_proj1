@@ -27,6 +27,7 @@
 #include "Renderer.h"
 #include "RenderObject.h"
 #include "Camera.h"
+#include "Time.h"
 
 #pragma comment(lib,"DirectXTex.lib")
 #pragma comment(lib,"d3d12.lib")
@@ -415,8 +416,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	MSG msg = {};
 	unsigned int frame = 0;
 	float angle = 0.0f;
+	float rotSpeed = 0.1f;
+	Time::Initialize();
 	auto dsvH = dsvHeap->GetCPUDescriptorHandleForHeapStart();
 	while (true) {
+		Time::Update();
+
+		angle += rotSpeed * Time::DeltaTime();
+
 		miku.transform.rotation.y = angle;
 		miku.transform.position.x = 3.0f;
 
