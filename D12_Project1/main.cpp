@@ -28,6 +28,7 @@
 #include "RenderObject.h"
 #include "Camera.h"
 #include "Time.h"
+#include "Input.h"
 
 #pragma comment(lib,"DirectXTex.lib")
 #pragma comment(lib,"d3d12.lib")
@@ -418,11 +419,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	float angle = 0.0f;
 	float rotSpeed = 0.1f;
 	Time::Initialize();
+	Input::Initialize();
 	auto dsvH = dsvHeap->GetCPUDescriptorHandleForHeapStart();
 	while (true) {
 		Time::Update();
+		Input::Update();
 
-		angle += rotSpeed * Time::DeltaTime();
+		if (Input::GetKey('W')) angle += rotSpeed * Time::DeltaTime();
 
 		miku.transform.rotation.y = angle;
 		miku.transform.position.x = 3.0f;
@@ -441,8 +444,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		mapCamera->view = camera.GetViewMatrix();
 		mapCamera->proj = camera.GetProjectionMatrix(aspectRatio);
 		mapCamera->eye = camera.position;
-
-		angle += 0.01;
 
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
