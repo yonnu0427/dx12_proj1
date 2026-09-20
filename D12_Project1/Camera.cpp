@@ -1,13 +1,43 @@
 #include "Camera.h"
 
-DirectX::XMMATRIX Camera::GetViewMatrix() const
+DirectX::XMVECTOR Camera::GetForward() const
 {
-	return DirectX::XMMatrixLookAtLH(
-		DirectX::XMLoadFloat3(&position),
-		DirectX::XMLoadFloat3(&target),
-		DirectX::XMLoadFloat3(&up)
+	DirectX::XMVECTOR rotation = DirectX::XMLoadFloat4(&transform.rotation);
+
+	return DirectX::XMVector3Rotate(
+		DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), rotation
 	);
 }
+
+DirectX::XMVECTOR Camera::GetRight() const
+{
+	DirectX::XMVECTOR rotation = DirectX::XMLoadFloat4(&transform.rotation);
+
+	return DirectX::XMVector3Rotate(
+		DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), rotation
+	);
+}
+
+DirectX::XMVECTOR Camera::GetUp() const
+{
+	DirectX::XMVECTOR rotation = DirectX::XMLoadFloat4(&transform.rotation);
+
+	return DirectX::XMVector3Rotate(
+		DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), rotation
+	);
+}
+
+DirectX::XMMATRIX Camera::GetViewMatrix() const
+{
+	DirectX::XMVECTOR position = XMLoadFloat3(&transform.position);
+
+	return DirectX::XMMatrixLookToLH(
+		position,
+		GetForward(),
+		GetUp()
+	);
+}
+
 DirectX::XMMATRIX Camera::GetProjectionMatrix(float aspectRatio) const
 {
 	return DirectX::XMMatrixPerspectiveFovLH(

@@ -409,6 +409,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	XMMATRIX worldMat = XMMatrixIdentity();
 	
 	Camera camera;
+	camera.transform.position = { 0.0f, 15.0f, -15.0f };
 	aspectRatio = static_cast<float>(window_width) / static_cast<float>(window_height);
 
 	auto viewMat = camera.GetViewMatrix();
@@ -418,6 +419,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	unsigned int frame = 0;
 	float angle = 0.0f;
 	float rotSpeed = 0.1f;
+	float cameraSpeed = 5.0f;
 	Time::Initialize();
 	Input::Initialize();
 	auto dsvH = dsvHeap->GetCPUDescriptorHandleForHeapStart();
@@ -425,12 +427,41 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Time::Update();
 		Input::Update();
 
-		if (Input::GetKey('W')) angle += rotSpeed * Time::DeltaTime();
+		float moveDist = cameraSpeed * Time::DeltaTime();
 
-		miku.transform.rotation.y = angle;
+		DirectX::XMVECTOR cameraPosition = DirectX::XMLoadFloat3(&camera.transform.position);
+
+		if (Input::GetKey('W'))
+		{
+			cameraPosition = DirectX::XMVectorAdd(cameraPosition, DirectX::XMVectorScale(camera.GetForward(), moveDist));
+		}
+
+		if (Input::GetKey('S'))
+		{
+			cameraPosition = DirectX::XMVectorAdd(cameraPosition, DirectX::XMVectorScale(camera.GetForward(), -moveDist));
+		}
+
+		if (Input::GetKey('D'))
+		{
+			cameraPosition = DirectX::XMVectorAdd(cameraPosition, DirectX::XMVectorScale(camera.GetRight(), moveDist));
+		}
+
+		if (Input::GetKey('A'))
+		{
+			cameraPosition = DirectX::XMVectorAdd(cameraPosition, DirectX::XMVectorScale(camera.GetRight(), -moveDist));
+		}
+
+		DirectX::XMStoreFloat3(
+			&camera.transform.position,
+			cameraPosition
+		);
+
+		//if (Input::GetKey('W')) angle += rotSpeed * Time::DeltaTime();
+
+		miku.transform.SetRotationEuler(0.0f, angle, 0.0f);
 		miku.transform.position.x = 3.0f;
 
-		ruka.transform.rotation.y = angle;
+		ruka.transform.SetRotationEuler(0.0f, angle, 0.0f);
 		ruka.transform.position.x = -3.0f;
 
 		worldMat = miku.transform.GetWorldMatrix();
@@ -443,7 +474,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		mapCamera->view = camera.GetViewMatrix();
 		mapCamera->proj = camera.GetProjectionMatrix(aspectRatio);
-		mapCamera->eye = camera.position;
+		mapCamera->eye = camera.transform.position;
 
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);

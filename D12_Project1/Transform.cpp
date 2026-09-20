@@ -2,17 +2,21 @@
 
 DirectX::XMMATRIX Transform::GetWorldMatrix() const
 {
-    auto scaleMat = DirectX::XMMatrixScaling(
+    DirectX::XMMATRIX scaleMat = DirectX::XMMatrixScaling(
         scale.x,
         scale.y,
         scale.z
     );
 
-    auto rotationMat = DirectX::XMMatrixRotationRollPitchYaw(
+    DirectX::XMVECTOR q = DirectX::XMVectorSet(
         rotation.x,
         rotation.y,
-        rotation.z
+        rotation.z,
+        rotation.w
     );
+
+
+    auto rotationMat = DirectX::XMMatrixRotationQuaternion(q);
 
     auto translationMat = DirectX::XMMatrixTranslation(
         position.x,
@@ -21,4 +25,14 @@ DirectX::XMMATRIX Transform::GetWorldMatrix() const
     );
 
     return scaleMat * rotationMat * translationMat;
+}
+
+void Transform::SetRotationEuler(float pitch, float yaw, float roll) {
+    DirectX::XMVECTOR q = DirectX::XMQuaternionRotationRollPitchYaw(
+        pitch,
+        yaw,
+        roll
+    );
+
+    DirectX::XMStoreFloat4(&rotation, q);
 }

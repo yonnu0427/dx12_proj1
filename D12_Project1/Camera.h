@@ -2,15 +2,19 @@
 
 #include <DirectXMath.h>
 
+#include "Transform.h"
+
 struct Camera
 {
-    DirectX::XMFLOAT3 position = { 0.0f, 15.0f, -15.0f };
-    DirectX::XMFLOAT3 target = { 0.0f, 15.0f, 0.0f };
-    DirectX::XMFLOAT3 up = { 0.0f, 1.0f, 0.0f };
+    Transform transform;
 
     float fov = DirectX::XM_PIDIV4;
     float nearZ = 1.0f;
     float farZ = 100.0f;
+
+    DirectX::XMVECTOR GetForward() const;
+    DirectX::XMVECTOR GetRight() const;
+    DirectX::XMVECTOR GetUp() const;
 
     DirectX::XMMATRIX GetViewMatrix() const;
     DirectX::XMMATRIX GetProjectionMatrix(float aspectRatio) const;
