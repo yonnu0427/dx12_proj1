@@ -421,11 +421,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	float rotSpeed = 0.1f;
 	float cameraSpeed = 5.0f;
 	Time::Initialize();
-	Input::Initialize();
+	Input::Initialize(hwnd);
 	auto dsvH = dsvHeap->GetCPUDescriptorHandleForHeapStart();
 	while (true) {
+		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+
+		if (msg.message == WM_QUIT) break;
+
+
 		Time::Update();
 		Input::Update();
+
+		std::cout
+			<< "pos: "
+			<< Input::GetMouseX()
+			<< ", "
+			<< Input::GetMouseY()
+			<< "  delta: "
+			<< Input::GetMouseDeltaX()
+			<< ", "
+			<< Input::GetMouseDeltaY()
+			<< std::endl;
 
 		float moveDist = cameraSpeed * Time::DeltaTime();
 

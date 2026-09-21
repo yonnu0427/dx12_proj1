@@ -1,4 +1,5 @@
 #include "Window.h"
+#include "Input.h"
 #include <tchar.h>
 
 //面倒だけど書かなあかんやつ
@@ -7,6 +8,11 @@ LRESULT WindowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
         PostQuitMessage(0);//OSに対して「もうこのアプリは終わるんや」と伝える
         return 0;
     }
+
+    if (msg == WM_INPUT) {
+        Input::ReceiveRawInput(lparam);
+    }
+
     return DefWindowProc(hwnd, msg, wparam, lparam);//規定の処理を行う
 }
 
