@@ -158,17 +158,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	string strModelPath = "Model/初音ミク.pmd";
 	string strModelPath2 = "Model/巡音ルカ.pmd";
 
+	Model mikuModel;
+	LoadModel(mikuModel, strModelPath);
+
+	Model rukaModel;
+	LoadModel(rukaModel, strModelPath2);
+
+
 	RenderObject miku;
-	InitializeRenderObject(
-		miku,
-		strModelPath
-	);
+	InitializeRenderObject(miku, &mikuModel);
 
 	RenderObject ruka;
-	InitializeRenderObject(
-		ruka,
-		strModelPath2
-	);
+	InitializeRenderObject(ruka, &rukaModel);
 
 
 	struct CameraData
@@ -495,10 +496,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		mapCamera->proj = camera.GetProjectionMatrix(aspectRatio);
 		mapCamera->eye = camera.transform.position;
 
-		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
 		//もうアプリケーションが終わるって時にmessageがWM_QUITになる
 		if (msg.message == WM_QUIT) {
 			break;
@@ -530,8 +527,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		_cmdList->RSSetScissorRects(1, &scissorrect);
 		
 
-		DrawModel(miku.model, miku.objectConstBuff, cameraConstBuff, rootsignature);
-		DrawModel(ruka.model, ruka.objectConstBuff, cameraConstBuff, rootsignature);
+		DrawModel(*miku.model, miku.objectConstBuff, cameraConstBuff, rootsignature);
+		DrawModel(*ruka.model, ruka.objectConstBuff, cameraConstBuff, rootsignature);
 
 		barrier = CD3DX12_RESOURCE_BARRIER::Transition(_backBuffers[bbIdx],
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);

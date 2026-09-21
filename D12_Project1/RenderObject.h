@@ -14,14 +14,11 @@ struct ObjectData
 
 struct RenderObject
 {
-    Model model;
+    Model* model = nullptr;
     Transform transform;
 
     ID3D12Resource* objectConstBuff = nullptr;
     ObjectData* mapScene = nullptr;
 };
 
-bool InitializeRenderObject(
-    RenderObject& object,
-    const std::string&modelPath
-);
+bool InitializeRenderObject(RenderObject& object, Model* model);

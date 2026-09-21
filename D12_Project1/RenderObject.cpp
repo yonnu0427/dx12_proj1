@@ -5,11 +5,8 @@
 
 #include <d3dx12.h>
 
-bool InitializeRenderObject(RenderObject& object, const std::string& modelPath) {
-	if (!LoadModel(object.model, modelPath))
-	{
-		return false;
-	}
+bool InitializeRenderObject(RenderObject& object, Model* model) {
+	object.model = model;
 
 	auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 
