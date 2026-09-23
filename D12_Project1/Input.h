@@ -2,14 +2,15 @@
 
 #include <Windows.h>
 
+// キーボードやマウスからの入力を管理する
 namespace Input
 {
-	void Initialize(HWND hwnd);
+	bool Initialize(HWND hwnd);
 	void Update();
 
-	bool GetKey(short key);
-	bool GetKeyDown(short key);
-	bool GetKeyUp(short key);
+	bool GetKey(SHORT key);
+	bool GetKeyDown(SHORT key);
+	bool GetKeyUp(SHORT key);
 
 	int GetMouseX();
 	int GetMouseY();

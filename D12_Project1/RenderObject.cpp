@@ -5,6 +5,7 @@
 
 #include <d3dx12.h>
 
+// 描画するオブジェクトの初期化を行う
 bool InitializeRenderObject(RenderObject& object, Model* model) {
 	object.model = model;
 
@@ -38,4 +39,6 @@ bool InitializeRenderObject(RenderObject& object, Model* model) {
 	{
 		return false;
 	}
+
+	return true;
 }

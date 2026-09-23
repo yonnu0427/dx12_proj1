@@ -1,5 +1,6 @@
 #include "Transform.h"
 
+// ローカル座標からワールド座標に変換する
 DirectX::XMMATRIX Transform::GetWorldMatrix() const
 {
     DirectX::XMMATRIX scaleMat = DirectX::XMMatrixScaling(
@@ -27,6 +28,7 @@ DirectX::XMMATRIX Transform::GetWorldMatrix() const
     return scaleMat * rotationMat * translationMat;
 }
 
+// オイラー角の入力をクォータニオンにしてrotationにセットする
 void Transform::SetRotationEuler(float pitch, float yaw, float roll) {
     DirectX::XMVECTOR q = DirectX::XMQuaternionRotationRollPitchYaw(
         pitch,

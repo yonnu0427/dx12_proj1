@@ -12,7 +12,7 @@ cbuffer SceneData : register(b0)
 {
     matrix world; //ワールド変換行列
 };
-//定数バッファ0
+//定数バッファ1
 cbuffer SceneData : register(b1)
 {
     matrix view;

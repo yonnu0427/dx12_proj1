@@ -4,6 +4,7 @@
 
 #include <d3d12.h>
 
+// ƒ‚ƒfƒ‹‚Ì•`‰æ
 void DrawModel(
     Model& model,
     ID3D12Resource* objectConstBuff,

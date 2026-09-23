@@ -2,6 +2,7 @@
 
 #include <DirectXMath.h>
 
+// オブジェクト, カメラなどの位置, 回転, 大きさを管理する
 struct Transform
 {
     DirectX::XMFLOAT3 position = { 0.0f, 0.0f, 0.0f };

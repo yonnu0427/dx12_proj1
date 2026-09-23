@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdio>
 
+// PMDƒ‚ƒfƒ‹‚ğ“Ç‚İ‚Ş
 PMDData LoadPMD(const std:: string& path) {
 	PMDData ret;
 

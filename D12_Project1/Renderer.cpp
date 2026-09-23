@@ -1,6 +1,7 @@
 #include "Renderer.h"
 #include "D3D12Context.h"
 
+// ƒ‚ƒfƒ‹‚ğ•`‰æ
 void DrawModel(Model& model, ID3D12Resource* objectConstBuff, ID3D12Resource* cameraConstBuff, ID3D12RootSignature* rootSignature)
 {
 	// OŠpŒ`‚Æ‚µ‚Ä•`‚­‚æ‚¤‚Éİ’è
