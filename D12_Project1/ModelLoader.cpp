@@ -1,11 +1,13 @@
 #include "ModelLoader.h"
 #include "PMDLoader.h"
+#include "FBXLoader.h"
 #include "D3D12Context.h"
 #include "Texture.h"
 
 #include <d3dx12.h>
 #include <string>
 #include <algorithm>
+#include <filesystem>
 
 static ID3D12Resource* whiteTex = nullptr;
 static ID3D12Resource* blackTex = nullptr;
@@ -18,7 +20,17 @@ bool LoadModel(Model& model, const std::string& path) {
 		gradTex = CreateGrayGradationTexture();
 	}
 
-	model.data = LoadPMD(path);
+	std::filesystem::path p = path;
+
+	std::string extension = p.extension().string();
+
+
+	if (extension == ".pmd") {
+		model.data = ConvertPMDToModelData(LoadPMD(path));
+	}
+	else if (extension == ".fbx" || extension == ".FBX") model.data = LoadFBX(path);
+	else						  return false;
+
 
 	auto& vertices = model.data.vertices;
 	auto& indices = model.data.indices;
@@ -34,7 +46,7 @@ bool LoadModel(Model& model, const std::string& path) {
 	model.vertBuff = nullptr;
 
 	auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	auto resDesc = CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(PMD_VERTEX));
+	auto resDesc = CD3DX12_RESOURCE_DESC::Buffer(vertices.size() * sizeof(ModelVertex));
 
 	auto result = _dev->CreateCommittedResource(
 		&heapProp,
@@ -44,31 +56,32 @@ bool LoadModel(Model& model, const std::string& path) {
 		nullptr,
 		IID_PPV_ARGS(&model.vertBuff));
 
-	PMD_VERTEX* vertMap = nullptr;
+	ModelVertex* vertMap = nullptr;
 	result = model.vertBuff->Map(0, nullptr, (void**)&vertMap);
 	std::copy(vertices.begin(), vertices.end(), vertMap);
 	model.vertBuff->Unmap(0, nullptr);
 
 	model.vbView = {};
 	model.vbView.BufferLocation = model.vertBuff->GetGPUVirtualAddress();//バッファの仮想アドレス
-	model.vbView.SizeInBytes = static_cast<UINT>(vertices.size() * sizeof(PMD_VERTEX));//全バイト数
-	model.vbView.StrideInBytes = sizeof(PMD_VERTEX);//1頂点あたりのバイト数
+	model.vbView.SizeInBytes = static_cast<UINT>(vertices.size() * sizeof(ModelVertex));//全バイト数
+	model.vbView.StrideInBytes = sizeof(ModelVertex);//1頂点あたりのバイト数
 
 	{
 		for (int i = 0; i < materials.size(); ++i) {
 			//トゥーンリソースの読み込み
-			std::string toonFilePath = "toon/";
-			char toonFileName[16];
-			sprintf_s(toonFileName, 16, "toon%02d.bmp", materials[i].additional.toonIdx + 1);
-			toonFilePath += toonFileName;
-			model.toonResources[i] = LoadTextureFromFile(toonFilePath);
+			if (!materials[i].toonTexPath.empty()) {
+				model.toonResources[i] = LoadTextureFromFile(materials[i].toonTexPath);
+			}
+			else {
+				model.toonResources[i] = nullptr;
+			}
 
-			if (materials[i].additional.texPath.empty()) {
+			if (materials[i].texPath.empty()) {
 				model.textureResources[i] = nullptr;
 				continue;
 			}
 
-			std::string texFileName = materials[i].additional.texPath;
+			std::string texFileName = materials[i].texPath;
 			std::string sphFileName = "";
 			std::string spaFileName = "";
 
@@ -93,16 +106,16 @@ bool LoadModel(Model& model, const std::string& path) {
 				}
 			}
 			else {
-				if (GetExtension(materials[i].additional.texPath) == "sph") {
-					sphFileName = materials[i].additional.texPath;
+				if (GetExtension(materials[i].texPath) == "sph") {
+					sphFileName = materials[i].texPath;
 					texFileName = "";
 				}
-				else if (GetExtension(materials[i].additional.texPath) == "spa") {
-					spaFileName = materials[i].additional.texPath;
+				else if (GetExtension(materials[i].texPath) == "spa") {
+					spaFileName = materials[i].texPath;
 					texFileName = "";
 				}
 				else {
-					texFileName = materials[i].additional.texPath;
+					texFileName = materials[i].texPath;
 				}
 			}
 			//モデルとテクスチャパスからアプリケーションからのテクスチャパスを得る
@@ -139,7 +152,7 @@ bool LoadModel(Model& model, const std::string& path) {
 		IID_PPV_ARGS(&model.idxBuff));
 
 	//作ったバッファにインデックスデータをコピー
-	unsigned short* mappedIdx = nullptr;
+	uint32_t* mappedIdx = nullptr;
 	model.idxBuff->Map(0, nullptr, (void**)&mappedIdx);
 	std::copy(indices.begin(), indices.end(), mappedIdx);
 	model.idxBuff->Unmap(0, nullptr);
@@ -147,7 +160,7 @@ bool LoadModel(Model& model, const std::string& path) {
 	//インデックスバッファビューを作成
 	model.ibView = {};
 	model.ibView.BufferLocation = model.idxBuff->GetGPUVirtualAddress();
-	model.ibView.Format = DXGI_FORMAT_R16_UINT;
+	model.ibView.Format = DXGI_FORMAT_R32_UINT;
 	model.ibView.SizeInBytes = static_cast<UINT>(indices.size() * sizeof(indices[0]));
 
 	//マテリアルバッファを作成
@@ -169,7 +182,16 @@ bool LoadModel(Model& model, const std::string& path) {
 	char* mapMaterial = nullptr;
 	result = model.materialBuff->Map(0, nullptr, (void**)&mapMaterial);
 	for (auto& m : materials) {
-		*((MaterialForHlsl*)mapMaterial) = m.material;//データコピー
+		MaterialForHlsl material = {};
+
+		material.diffuse = m.diffuse;
+		material.alpha = m.alpha;
+		material.specular = m.specular;
+		material.specularity = m.specularity;
+		material.ambient = m.ambient;
+
+		*((MaterialForHlsl*)mapMaterial) = material;
+
 		mapMaterial += materialBuffSize;//次のアライメント位置まで進める
 	}
 	model.materialBuff->Unmap(0, nullptr);

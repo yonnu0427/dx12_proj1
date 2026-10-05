@@ -28,7 +28,12 @@ cbuffer Material : register(b2)
     float3 ambient; //アンビエント
 };
 
+float4 BasicPS(BasicType input) : SV_TARGET
+{
+    return tex.Sample(smp, input.uv);
+}
 
+/*
 float4 BasicPS(BasicType input) : SV_TARGET
 {
     float3 light = normalize(float3(1, -1, 1)); //光の向かうベクトル(平行光線)
@@ -55,4 +60,4 @@ float4 BasicPS(BasicType input) : SV_TARGET
 		+ saturate(spa.Sample(smp, sphereMapUV) * texColor //スフィアマップ(加算)
 		+ float4(specularB * specular.rgb, 1)) //スペキュラー
 		, float4(texColor * ambient, 1)); //アンビエント
-}
+}*/

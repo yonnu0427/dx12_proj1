@@ -156,7 +156,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//string strModelPath = "Model/reimu/reimu.pmd";
 	//string strModelPath = "Model/巡音ルカ.pmd";
 	string strModelPath = "Model/初音ミク.pmd";
-	string strModelPath2 = "Model/巡音ルカ.pmd";
+	//string strModelPath = "Model/vrChatRiman_slim_toon.fbx";
+	//string strModelPath2 = "Model/巡音ルカ.pmd";
+	//string strModelPath2 = "Model/riman3D.fbx";
+	//string strModelPath2 = "Model/vrChatRiman_slim_toon.fbx";
+	string strModelPath2 = "Model/Assets/Alicia/FBX/Alicia_solid_MMD.FBX";
 
 	Model mikuModel;
 	LoadModel(mikuModel, strModelPath);
@@ -484,13 +488,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ruka.transform.SetRotationEuler(0.0f, angle, 0.0f);
 		ruka.transform.position.x = -3.0f;
 
-		worldMat = miku.transform.GetWorldMatrix();
+		//ruka.transform.position.y = -9.0f;
 
-		miku.mapScene->world = worldMat;
+		ruka.transform.scale = {
+			0.1f,
+			0.1f,
+			0.1f
+		};
 
-		worldMat = ruka.transform.GetWorldMatrix();
-
-		ruka.mapScene->world = worldMat;
+		UpdateRenderObjectMatrices(miku);
+		UpdateRenderObjectMatrices(ruka);
 
 		mapCamera->view = camera.GetViewMatrix();
 		mapCamera->proj = camera.GetProjectionMatrix(aspectRatio);
@@ -520,15 +527,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		_cmdList->ClearDepthStencilView(dsvH, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 		//画面クリア
 
-		float clearColor[] = { 1.0f,1.0f,1.0f,1.0f };//白色
+		float clearColor[] = { 0.1f,0.1f,0.1f,1.0f };//黒色
 		_cmdList->ClearRenderTargetView(rtvH, clearColor, 0, nullptr);
 
 		_cmdList->RSSetViewports(1, &viewport);
 		_cmdList->RSSetScissorRects(1, &scissorrect);
 		
 
-		DrawModel(*miku.model, miku.objectConstBuff, cameraConstBuff, rootsignature);
-		DrawModel(*ruka.model, ruka.objectConstBuff, cameraConstBuff, rootsignature);
+		DrawModel(miku, cameraConstBuff, rootsignature);
+		DrawModel(ruka, cameraConstBuff, rootsignature);
 
 		barrier = CD3DX12_RESOURCE_BARRIER::Transition(_backBuffers[bbIdx],
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);

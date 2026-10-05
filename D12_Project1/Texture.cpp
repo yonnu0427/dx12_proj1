@@ -230,6 +230,23 @@ LoadTextureFromFile(std::string& texPath) {
 	ScratchImage scratchImg = {};
 	auto wtexpath = GetWideStringFromString(texPath);//テクスチャのファイルパス
 	auto ext = GetExtension(texPath);//拡張子を取得
+
+	auto loaderIt = loadLambdaTable.find(ext);
+	if (loaderIt == loadLambdaTable.end()) {
+		std::string message =
+			"Unsupported texture extension: "
+			+ ext
+			+ "\nPath: "
+			+ texPath
+			+ "\n";
+
+		OutputDebugStringA(
+			message.c_str()
+		);
+
+		return nullptr;
+	}
+
 	auto result = loadLambdaTable[ext](wtexpath,
 		&metadata,
 		scratchImg);

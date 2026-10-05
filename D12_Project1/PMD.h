@@ -25,6 +25,20 @@ struct PMDHeader {
     char comment[256];//モデルコメント
 };
 
+#pragma pack(push, 1)
+struct PMDBone {
+    char name[20];
+
+    uint16_t parentBoneIndex;
+    uint16_t tailBoneIndex;
+
+    uint8_t boneType;
+
+    uint16_t ikParentBoneIndex;
+
+    DirectX::XMFLOAT3 position;
+};
+
 #pragma pack(1)
 //PMDマテリアル構造体
 struct PMDMaterial {
@@ -71,4 +85,6 @@ struct PMDData
     std::vector<PMD_VERTEX> vertices;
     std::vector<unsigned short> indices;
     std::vector<Material> materials;
+
+    std::vector<PMDBone> bones;
 };
