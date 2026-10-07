@@ -26,6 +26,13 @@ void DrawModel(RenderObject& object, ID3D12Resource* cameraConstBuff, ID3D12Root
 
 	auto cbvsrvIncSize = _dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * 5;
 
+	if (object.skinMatBuff != nullptr) {
+		_cmdList->SetGraphicsRootShaderResourceView(
+			3,
+			object.skinMatBuff->GetGPUVirtualAddress()
+		);
+	}
+
 	// Node‚²‚Æ‚É•`‰æ
 	for (uint32_t nodeIdx = 0; nodeIdx < model.data.nodes.size(); ++nodeIdx) {
 		const auto& node = model.data.nodes[nodeIdx];

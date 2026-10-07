@@ -13,3 +13,7 @@ void AddBoneWeight(ModelVertex& vertex, uint32_t boneIndex, float weight);
 
 // Assimp‚ÆDirectXMath‚Ås—ñ‚Ìˆµ‚¢‚ªˆá‚¤‚Ì‚Å“]’u
 DirectX::XMFLOAT4X4 ConvertAssimpMatrix(const aiMatrix4x4& m);
+
+std::vector<DirectX::XMFLOAT4X4> CalcNodeGlobalMatrices(const ModelData& modelData);
+
+void BuildSkeletonBindPose(ModelData& modelData);

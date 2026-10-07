@@ -10,6 +10,7 @@ bool InitializeRenderObject(RenderObject& object, Model* model) {
 	object.model = model;
 
 	object.nodePoses.resize(model->data.nodes.size());
+	object.skinMatrices.resize(model->data.skeleton.bones.size());
 
 	for (size_t i = 0; i < model->data.nodes.size(); ++i) {
 		const ModelNode& node = model->data.nodes[i];
@@ -22,6 +23,32 @@ bool InitializeRenderObject(RenderObject& object, Model* model) {
 
 		DirectX::XMStoreFloat4x4(&pose.globalMatrix, DirectX::XMMatrixIdentity());
 	}
+
+
+	for (const ModelBone& bone : model->data.skeleton.bones)
+	{
+		NodePose& pose = object.nodePoses[bone.nodeIndex];
+
+		DirectX::XMMATRIX bindLocal = DirectX::XMLoadFloat4x4(&bone.bindLocalMatrix);
+
+		DirectX::XMVECTOR scale;
+		DirectX::XMVECTOR rotation;
+		DirectX::XMVECTOR translation;
+
+		bool success = DirectX::XMMatrixDecompose(
+			&scale,
+			&rotation,
+			&translation,
+			bindLocal
+		);
+
+		if (!success) continue;
+
+		DirectX::XMStoreFloat3(&pose.scale, scale);
+		DirectX::XMStoreFloat4(&pose.rotation, rotation);
+		DirectX::XMStoreFloat3(&pose.position, translation);
+	}
+
 
 	UpdateNodeMatrices(object);
 
@@ -51,6 +78,40 @@ bool InitializeRenderObject(RenderObject& object, Model* model) {
 			0,
 			nullptr,
 			reinterpret_cast<void**>(&renderData.mappedData)
+		);
+
+		if (FAILED(result))
+		{
+			return false;
+		}
+	}
+
+	// skinMatrixのGPU紐づけ
+	if (!object.skinMatrices.empty()) {
+		UINT64 buffSize = sizeof(DirectX::XMFLOAT4X4) * object.skinMatrices.size();
+
+		auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+
+		auto resDesc = CD3DX12_RESOURCE_DESC::Buffer(buffSize);
+		
+		HRESULT result = _dev->CreateCommittedResource(
+			&heapProp,
+			D3D12_HEAP_FLAG_NONE,
+			&resDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&object.skinMatBuff)
+		);
+			
+		if (FAILED(result))
+		{
+			return false;
+		}
+
+		result = object.skinMatBuff->Map(
+			0,
+			nullptr,
+			reinterpret_cast<void**>(&object.mappedSkinMatrices)
 		);
 
 		if (FAILED(result))
@@ -164,6 +225,7 @@ void UpdateRenderObjectMatrices(RenderObject& object) {
 
 	// アニメーションでNodePoseが変わっている可能性があるのでNodeのGlobalMatrixを更新
 	UpdateNodeMatrices(object);
+	UpdateSkinMatrices(object);
 
 	// オブジェクト全体のWorldMatrix
 	XMMATRIX objectWorld = object.transform.GetWorldMatrix();
@@ -174,5 +236,32 @@ void UpdateRenderObjectMatrices(RenderObject& object) {
 		XMMATRIX world = nodeGlobal * objectWorld;
 
 		object.nodeRenderDatas[i].mappedData->world = world;
+	}
+}
+
+void UpdateSkinMatrices(RenderObject& object) {
+	const auto& bones = object.model->data.skeleton.bones;
+
+	for (size_t i = 0; i < bones.size(); ++i)
+	{
+		const ModelBone& bone = bones[i];
+
+		DirectX::XMMATRIX inverseBind = DirectX::XMLoadFloat4x4(&bone.inverseBindMatrix);
+
+		DirectX::XMMATRIX boneGlobal = DirectX::XMLoadFloat4x4(&object.nodePoses[bone.nodeIndex].globalMatrix);
+
+		DirectX::XMMATRIX skinMatrix = inverseBind * boneGlobal;
+
+		DirectX::XMStoreFloat4x4(&object.skinMatrices[i], skinMatrix);
+	}
+
+	// CPU -> GPU
+	if (object.mappedSkinMatrices != nullptr)
+	{
+		memcpy(
+			object.mappedSkinMatrices,
+			object.skinMatrices.data(),
+			sizeof(XMFLOAT4X4) * object.skinMatrices.size()
+		);
 	}
 }

@@ -217,6 +217,28 @@ ModelData ConvertPMDToModelData(const PMDData& pmdData) {
 
 		DirectX::XMStoreFloat4x4(&bone.inverseBindMatrix, inverseBind);
 
+		const ModelNode& boneNode = ret.nodes[bone.nodeIndex];
+
+		DirectX::XMMATRIX scaleMatrix = DirectX::XMMatrixScaling(
+			boneNode.scale.x,
+			boneNode.scale.y,
+			boneNode.scale.z
+		);
+
+		DirectX::XMMATRIX rotationMatrix(DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&boneNode.rotation)));
+
+		DirectX::XMMATRIX translationMatrix = DirectX::XMMatrixTranslation(
+			boneNode.position.x,
+			boneNode.position.y,
+			boneNode.position.z
+		);
+
+		DirectX::XMMATRIX bindLocal = scaleMatrix * rotationMatrix * translationMatrix;
+
+		DirectX::XMStoreFloat4x4(&bone.bindLocalMatrix, bindLocal);
+
+
+
 		ret.skeleton.bones.push_back(bone);
 	}
 

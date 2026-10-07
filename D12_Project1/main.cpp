@@ -261,8 +261,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		{ "POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D12_APPEND_ALIGNED_ELEMENT,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0 },
 		{ "NORMAL",0,DXGI_FORMAT_R32G32B32_FLOAT,0,D3D12_APPEND_ALIGNED_ELEMENT,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0 },
 		{ "TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,D3D12_APPEND_ALIGNED_ELEMENT,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0 },
-		{ "BONE_NO",0,DXGI_FORMAT_R16G16_UINT,0,D3D12_APPEND_ALIGNED_ELEMENT,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0 },
-		{ "WEIGHT",0,DXGI_FORMAT_R8_UINT,0,D3D12_APPEND_ALIGNED_ELEMENT,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0 },
+		{ "BONE_INDEX",0,DXGI_FORMAT_R32G32B32A32_UINT,0,D3D12_APPEND_ALIGNED_ELEMENT,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0 },
+		{ "BONE_WEIGHT",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,D3D12_APPEND_ALIGNED_ELEMENT,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0 },
 		//{ "EDGE_FLG",0,DXGI_FORMAT_R8_UINT,0,D3D12_APPEND_ALIGNED_ELEMENT,D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0 },
 	};
 
@@ -348,7 +348,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	descTblRange[2].BaseShaderRegister = 0;//2番スロットから
 	descTblRange[2].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 
-	D3D12_ROOT_PARAMETER rootparam[3] = {};
+	D3D12_ROOT_PARAMETER rootparam[4] = {};
 	rootparam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootparam[0].Descriptor.ShaderRegister = 0;
 	rootparam[0].Descriptor.RegisterSpace = 0;
@@ -357,15 +357,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	rootparam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 	rootparam[1].Descriptor.ShaderRegister = 1;
 	rootparam[1].Descriptor.RegisterSpace = 0;
-	rootparam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;;
+	rootparam[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	rootparam[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootparam[2].DescriptorTable.pDescriptorRanges = &descTblRange[1];//デスクリプタレンジのアドレス
 	rootparam[2].DescriptorTable.NumDescriptorRanges = 2;//デスクリプタレンジ数←ここ
 	rootparam[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//ピクセルシェーダから見える
 
+	rootparam[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_SRV;
+	rootparam[3].Descriptor.ShaderRegister = 4;
+	rootparam[3].Descriptor.RegisterSpace = 0;
+	rootparam[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX; // バーテックスシェーダから見える
+
 	rootSignatureDesc.pParameters = rootparam;//ルートパラメータの先頭アドレス
-	rootSignatureDesc.NumParameters = 3;//ルートパラメータ数
+	rootSignatureDesc.NumParameters = 4;//ルートパラメータ数
 
 	D3D12_STATIC_SAMPLER_DESC samplerDesc[2] = {};
 	samplerDesc[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;//横繰り返し
@@ -495,6 +500,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			0.1f,
 			0.1f
 		};
+
+		// デバッグ用
+		const ModelBone& testBone =
+			miku.model->data.skeleton.bones[1];
+
+		NodePose& testPose =
+			miku.nodePoses[testBone.nodeIndex];
+
+		DirectX::XMVECTOR rotation =
+			DirectX::XMQuaternionRotationRollPitchYaw(
+				0.0f,
+				0.0f,
+				DirectX::XMConvertToRadians(30.0f)
+			);
+
+		DirectX::XMStoreFloat4(
+			&testPose.rotation,
+			rotation
+		);
 
 		UpdateRenderObjectMatrices(miku);
 		UpdateRenderObjectMatrices(ruka);

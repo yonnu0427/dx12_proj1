@@ -57,7 +57,12 @@ struct ModelNode {
 
 struct ModelBone {
     uint32_t nodeIndex;
+
+    // Model‹óŠÔ->Bone‹óŠÔ‚É‚·‚éMatrix
     DirectX::XMFLOAT4X4 inverseBindMatrix;
+
+    // BindPose‚ÌeNode‚©‚çŒ©‚½LocalTransform
+    DirectX::XMFLOAT4X4 bindLocalMatrix;
 };
 
 struct ModelSkeleton {
